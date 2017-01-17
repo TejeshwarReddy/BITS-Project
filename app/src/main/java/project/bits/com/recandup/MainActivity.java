@@ -5,8 +5,6 @@ import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -35,11 +33,10 @@ import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
-    Button photo,video;
+    Button video;
     FloatingActionButton upload;
 
     static final int REQUEST_VIDEO_CAPTURE = 2;
-    static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int FILE_CODE = 3;
 
 
@@ -48,11 +45,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        photo = (Button) findViewById(R.id.take_photo);
         video = (Button) findViewById(R.id.take_video);
         upload = (FloatingActionButton) findViewById(R.id.upload);
 
-        photo.setOnClickListener(this);
         video.setOnClickListener(this);
         upload.setOnClickListener(this);
     }
@@ -64,32 +59,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Calendar cal;
         File folder;
         switch (view.getId()){
-            case R.id.take_photo:
-                cal = Calendar.getInstance();
-                folder = new File(Environment.getExternalStorageDirectory(), "/PROJECT_MULTIMEDIA");
-                folder.mkdirs();
-                File image = new File(folder,cal.getTimeInMillis()+".jpg");
-                if(!image.exists()){
-                    try {
-                        image.createNewFile();
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }else{
-                    image.delete();
-                    try {
-                        image.createNewFile();
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }
-                capturedMediaUri= Uri.fromFile(image);
-                Intent i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-                i.putExtra(MediaStore.EXTRA_OUTPUT, capturedMediaUri);
-                startActivityForResult(i, REQUEST_IMAGE_CAPTURE);
-                break;
             case R.id.take_video:
                 cal = Calendar.getInstance();
                 folder = new File(Environment.getExternalStorageDirectory(), "PROJECT_MULTIMEDIA");
@@ -143,9 +112,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_IMAGE_CAPTURE) {
-            Bitmap bitmap = BitmapFactory.decodeFile(capturedMediaUri.getPath());
-        }
         if (requestCode == FILE_CODE && resultCode == RESULT_OK) {
             if (data.getBooleanExtra(FilePickerActivity.EXTRA_ALLOW_MULTIPLE, false)) {
                 // For JellyBean and above

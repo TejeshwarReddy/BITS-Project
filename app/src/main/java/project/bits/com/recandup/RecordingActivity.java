@@ -12,19 +12,34 @@ import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
-public class RecordingActivity extends AppCompatActivity {
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
+import project.bits.com.recandup.api.FileUploadService;
+import project.bits.com.recandup.api.ServiceGenerator;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+import static android.media.MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED;
+
+public class RecordingActivity extends AppCompatActivity implements View.OnClickListener{
 
     private Camera camera;
     private LinearLayout showCase;
-    private Button start,stop;
+    private Button start;
     private CameraPreview cameraPreview;
     private boolean isRecording = false;
     private MediaRecorder mMediaRecorder;
@@ -32,15 +47,17 @@ public class RecordingActivity extends AppCompatActivity {
     public static final int MEDIA_TYPE_VIDEO = 2;
     private static final String TAG = "Recording Activity";
 
+    DBManager manager;
     /** Create a file Uri for saving an image or video */
-    private static Uri getOutputMediaFileUri(int type){
-        return Uri.fromFile(getOutputMediaFile(type));
+    private Uri getOutputMediaFileUri(int type){
+        return Uri.fromFile(this.getOutputMediaFile(type));
     }
 
     /** Create a File for saving an image or video */
-    private static File getOutputMediaFile(int type){
+    private File getOutputMediaFile(int type){
         // To be safe, you should check that the SDCard is mounted
         // using Environment.getExternalStorageState() before doing this.
+        manager = new DBManager(this);
 
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), "MyCameraApp");
@@ -58,16 +75,14 @@ public class RecordingActivity extends AppCompatActivity {
         // Create a media file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         File mediaFile;
-        if (type == MEDIA_TYPE_IMAGE){
-            mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                    "IMG_"+ timeStamp + ".jpg");
-        } else if(type == MEDIA_TYPE_VIDEO) {
+        if(type == MEDIA_TYPE_VIDEO) {
             mediaFile = new File(mediaStorageDir.getPath() + File.separator +
                     "VID_"+ timeStamp + ".mp4");
         } else {
             return null;
         }
 
+        manager.addVideoAddress(mediaFile.getPath());
         return mediaFile;
     }
 
@@ -75,6 +90,12 @@ public class RecordingActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //dim the screen
+        WindowManager.LayoutParams params = getWindow().getAttributes();
+        params.flags |= WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
+        params.screenBrightness = 0;
+        getWindow().setAttributes(params);
 
         camera = getCameraInstance();
         cameraPreview = new CameraPreview(this,camera);
@@ -85,37 +106,7 @@ public class RecordingActivity extends AppCompatActivity {
         showCase.addView(cameraPreview);
 
         // Add a listener to the Capture button
-        start.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (isRecording) {
-                            // stop recording and release camera
-                            mMediaRecorder.stop();  // stop the recording
-                            releaseMediaRecorder();// release the MediaRecorder object
-                            camera.lock();         // take camera access back from MediaRecorder
-
-                            // inform the user that recording has stopped
-                            start.setText("CAPTURE");
-                            isRecording = false;
-                        } else {
-                            // initialize video camera
-                            if (prepareVideoRecorder()) {
-                                // Camera is available and unlocked, MediaRecorder is prepared,
-                                // now you can start recording
-                                mMediaRecorder.start();
-
-                                // inform the user that recording has started
-                                start.setText("STOP");
-                                isRecording = true;
-                            } else {
-                                // prepare didn't work, release the camera
-                                releaseMediaRecorder();
-                                // inform user
-                            }
-                        }
-                    }
-                }
-        );
+        start.setOnClickListener(this);
     }
 
     public static Camera getCameraInstance(){
@@ -141,8 +132,8 @@ public class RecordingActivity extends AppCompatActivity {
 
         // Step 1: Unlock and set camera to MediaRecorder
         camera.unlock();
-        mMediaRecorder.setCamera(camera);
 
+        mMediaRecorder.setCamera(camera);
         // Step 2: Set sources
         mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
@@ -150,11 +141,39 @@ public class RecordingActivity extends AppCompatActivity {
         // Step 3: Set a CamcorderProfile (requires API Level 8 or higher)
         mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_LOW));
 
+        //setting capture rate
+        mMediaRecorder.setCaptureRate(10);
+
+        mMediaRecorder.setMaxDuration(2000);
+
         // Step 4: Set output file
-        mMediaRecorder.setOutputFile(getOutputMediaFile(MEDIA_TYPE_VIDEO).toString());
+        mMediaRecorder.setOutputFile(this.getOutputMediaFile(MEDIA_TYPE_VIDEO).toString());
 
         // Step 5: Set the preview output
         mMediaRecorder.setPreviewDisplay(cameraPreview.getHolder().getSurface());
+
+        mMediaRecorder.setOnInfoListener(new MediaRecorder.OnInfoListener() {
+            @Override
+            public void onInfo(MediaRecorder mediaRecorder, int i, int i1) {
+                if (i == MEDIA_RECORDER_INFO_MAX_DURATION_REACHED){
+                    Toast.makeText(RecordingActivity.this,"Video Time Done",Toast.LENGTH_SHORT).show();
+                    releaseMediaRecorder();
+                    if (prepareVideoRecorder()) {
+                        // Camera is available and unlocked, MediaRecorder is prepared,
+                        // now you can start recording
+                        mMediaRecorder.start();
+                        // inform the user that recording has started
+                        start.setText("STOP");
+                        Toast.makeText(RecordingActivity.this,"Video Started",Toast.LENGTH_SHORT).show();
+                        isRecording = true;
+                    } else {
+                        // prepare didn't work, release the camera
+                        releaseMediaRecorder();
+                        // inform user
+                    }
+                }
+            }
+        });
 
         // Step 6: Prepare configured MediaRecorder
         try {
@@ -192,5 +211,73 @@ public class RecordingActivity extends AppCompatActivity {
             camera.release();        // release the camera for other applications
             camera = null;
         }
+    }
+
+    @Override
+    public void onClick(View view) {
+        manager = new DBManager(this);
+        ArrayList<String> notUpload = manager.getNotUploadedVideos();
+        if (notUpload.size()!=0) {
+            Log.e(TAG, notUpload.get(0));
+        }
+        notUpload = manager.getToBeDeleted();
+        if (notUpload.size()!=0){
+            Log.e(TAG,notUpload.get(0));
+        }
+        if (view.getId() == R.id.start_video){
+            if (isRecording) {
+                // stop recording and release camera
+                mMediaRecorder.stop();  // stop the recording
+                releaseMediaRecorder();// release the MediaRecorder object
+                camera.lock();         // take camera access back from MediaRecorder
+                // inform the user that recording has stopped
+                start.setText("START");
+                isRecording = false;
+            } else {
+                // initialize video camera
+                if (prepareVideoRecorder()) {
+                    // Camera is available and unlocked, MediaRecorder is prepared,
+                    // now you can start recording
+                    mMediaRecorder.start();
+                    // inform the user that recording has started
+                    start.setText("STOP");
+                    isRecording = true;
+                } else {
+                    // prepare didn't work, release the camera
+                    releaseMediaRecorder();
+                    // inform user
+                }
+            }
+        }
+    }
+
+    private void uploadFile(Uri fileUri) {
+        // create upload service client
+        FileUploadService service = ServiceGenerator.createService(FileUploadService.class);
+
+        File file = new File(fileUri.getPath());
+
+        // create RequestBody instance from file
+        RequestBody requestFile = RequestBody.create(MediaType.parse(getContentResolver().getType(fileUri)), file);
+
+        // MultipartBody.Part is used to send also the actual file name
+        MultipartBody.Part body = MultipartBody.Part.createFormData("video", file.getName(), requestFile);
+
+        // add another part within the multipart request
+        String descriptionString = "hello, this is description speaking";
+        RequestBody description = RequestBody.create(okhttp3.MultipartBody.FORM, descriptionString);
+
+        // finally, execute the request
+        Call<ResponseBody> call = service.upload(description, body);
+        call.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                Log.v("Upload", "success");
+            }
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e("Upload error:", t.getMessage());
+            }
+        });
     }
 }

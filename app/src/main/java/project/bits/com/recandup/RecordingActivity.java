@@ -1,6 +1,7 @@
 package project.bits.com.recandup;
 
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
@@ -22,16 +23,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
-import project.bits.com.recandup.api.FileUploadService;
-import project.bits.com.recandup.api.ServiceGenerator;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 import static android.media.MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED;
 
@@ -82,7 +73,7 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
             return null;
         }
 
-        manager.addVideoAddress(mediaFile.getPath());
+        manager.addVideoAddress(mediaFile.getPath(),System.currentTimeMillis());
         return mediaFile;
     }
 
@@ -90,6 +81,8 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        startService(new Intent(this,ServiceManager.class));
 
         //dim the screen
         WindowManager.LayoutParams params = getWindow().getAttributes();
@@ -249,35 +242,5 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
                 }
             }
         }
-    }
-
-    private void uploadFile(Uri fileUri) {
-        // create upload service client
-        FileUploadService service = ServiceGenerator.createService(FileUploadService.class);
-
-        File file = new File(fileUri.getPath());
-
-        // create RequestBody instance from file
-        RequestBody requestFile = RequestBody.create(MediaType.parse(getContentResolver().getType(fileUri)), file);
-
-        // MultipartBody.Part is used to send also the actual file name
-        MultipartBody.Part body = MultipartBody.Part.createFormData("video", file.getName(), requestFile);
-
-        // add another part within the multipart request
-        String descriptionString = "hello, this is description speaking";
-        RequestBody description = RequestBody.create(okhttp3.MultipartBody.FORM, descriptionString);
-
-        // finally, execute the request
-        Call<ResponseBody> call = service.upload(description, body);
-        call.enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                Log.v("Upload", "success");
-            }
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e("Upload error:", t.getMessage());
-            }
-        });
     }
 }

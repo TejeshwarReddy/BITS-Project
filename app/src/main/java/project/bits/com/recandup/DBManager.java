@@ -24,6 +24,7 @@ public class DBManager extends SQLiteOpenHelper {
     private static final String KEY_TITLE = "title";
     private static final String KEY_UPLOADED = "uploaded";
     private static final String KEY_DELETED = "deleted";
+    private static final String KEY_TIME = "time";
 
     //CREATE TABLE
     private static final String CREATE_TABLE =
@@ -31,15 +32,17 @@ public class DBManager extends SQLiteOpenHelper {
             KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
             KEY_TITLE + " TEXT, " +
             KEY_DELETED + " INTEGER NOT NULL DEFAULT 0, " +
-            KEY_UPLOADED + " INTEGER NOT NULL DEFAULT 0); ";
+            KEY_UPLOADED + " INTEGER NOT NULL DEFAULT 0, " +
+            KEY_TIME + " INTEGER UNIQUE NOT NULL);";
 
     private SQLiteDatabase db;
     private long success = 0;
 
-    public long addVideoAddress(String title){
+    public long addVideoAddress(String title,long time){
         db=this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(KEY_TITLE,title);
+        cv.put(KEY_TIME,time);
         success = db.insert(TABLE,null,cv);
         db.close();
         return success;
@@ -66,7 +69,7 @@ public class DBManager extends SQLiteOpenHelper {
     public ArrayList<String> getNotUploadedVideos(){
         ArrayList<String> notUploaded = new ArrayList<>();
         db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery("SELECT " + KEY_TITLE + " FROM " + TABLE + " WHERE " + KEY_UPLOADED +"= 0", null);
+        Cursor cursor = db.rawQuery("SELECT " + KEY_TITLE + " FROM " + TABLE + " WHERE " + KEY_UPLOADED +"= 0 ORDER BY "+ KEY_TIME , null);
         if (cursor.moveToFirst()){
             do {
                 notUploaded.add(cursor.getString(0));

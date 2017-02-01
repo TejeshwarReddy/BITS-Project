@@ -13,13 +13,9 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
-import project.bits.com.recandup.api.ApiInterface;
-import project.bits.com.recandup.api.ServiceGenerator;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import static android.content.ContentValues.TAG;
 
 /**
  * Created by tejeshwar on 28/1/17.
@@ -35,12 +31,14 @@ public class FileUploadService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
+//        Toast.makeText(this, "FILE UPLOAD SERVICE", Toast.LENGTH_SHORT).show();
         manager = new DBManager(this);
         ArrayList<String> notUploaded = manager.getNotUploadedVideos();
-        if (!notUploaded.isEmpty()) {
+        if (!(notUploaded.size()==0)) {
             for (int i = 0; i < notUploaded.size(); i++) {
+//                Log.e("FILE UPLOAD SERVICE", notUploaded.get(i));
                 boolean success = uploadFile(Uri.parse(notUploaded.get(i)));
-                Log.d(TAG, success + "");
+                Log.e("FILE UPLOAD SERVICE", success + "");
             }
         }
     }
@@ -48,30 +46,23 @@ public class FileUploadService extends IntentService {
     boolean success;
 
     private boolean uploadFile(final Uri fileUri) {
-
+        Log.e("upload function","hello from upload file");
         manager = new DBManager(this);
-
         // create upload service client
-        ApiInterface service = ServiceGenerator.createService(ApiInterface.class);
-
+        ApiInterface service = ApiClient.getClient().create(ApiInterface.class);
         File file = new File(fileUri.getPath());
-
         // create RequestBody instance from file
-        RequestBody requestFile = RequestBody.create(MediaType.parse(getContentResolver().getType(fileUri)), file);
 
-        // MultipartBody.Part is used to send also the actual file name
-        MultipartBody.Part body = MultipartBody.Part.createFormData("video", file.getName(), requestFile);
 
-        // add another part within the multipart request
-        String descriptionString = "hello, this is description speaking";
-        RequestBody description = RequestBody.create(okhttp3.MultipartBody.FORM, descriptionString);
+        RequestBody videoBody = RequestBody.create(MediaType.parse("video/*"), file);
+        MultipartBody.Part fileToUpload = MultipartBody.Part.createFormData("video", file.getName(), videoBody);
 
         // finally, execute the request
-        Call<ResponseBody> call = service.upload(body);
+        Call<ResponseBody> call = service.upload(fileToUpload);
         call.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                Log.v("Upload", "success");
+                Log.e("Upload", "success");
                 manager.feedUploadSuccess(fileUri.getPath());
                 success = true;
             }

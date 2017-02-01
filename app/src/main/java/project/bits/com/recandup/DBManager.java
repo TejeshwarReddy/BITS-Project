@@ -52,7 +52,7 @@ public class DBManager extends SQLiteOpenHelper {
         db=this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(KEY_UPLOADED,1);
-        success = db.update(TABLE,cv,KEY_TITLE+"="+title,null);
+        success = db.update(TABLE,cv,KEY_TITLE+"= '"+title+"'",null);
         db.close();
         return success;
     }
@@ -61,7 +61,7 @@ public class DBManager extends SQLiteOpenHelper {
         db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(KEY_DELETED,1);
-        success = db.update(TABLE,cv,KEY_TITLE+"="+title,null);
+        success = db.update(TABLE,cv,KEY_TITLE+" = '"+title+"'",null);
         db.close();
         return success;
     }
@@ -69,7 +69,8 @@ public class DBManager extends SQLiteOpenHelper {
     public ArrayList<String> getNotUploadedVideos(){
         ArrayList<String> notUploaded = new ArrayList<>();
         db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery("SELECT " + KEY_TITLE + " FROM " + TABLE + " WHERE " + KEY_UPLOADED +"= 0 ORDER BY "+ KEY_TIME , null);
+        long time = System.currentTimeMillis()-90000;
+        Cursor cursor = db.rawQuery("SELECT " + KEY_TITLE + " FROM " + TABLE + " WHERE " + KEY_UPLOADED +" = 0 AND "+KEY_TIME+" <= '"+ time +"' ORDER BY "+ KEY_TIME , null);
         if (cursor.moveToFirst()){
             do {
                 notUploaded.add(cursor.getString(0));
@@ -92,6 +93,13 @@ public class DBManager extends SQLiteOpenHelper {
         cursor.close();
         db.close();
         return toDelete;
+    }
+
+    public long deleteRecords(){
+        db = this.getWritableDatabase();
+        success = db.delete(TABLE,KEY_DELETED + " = 1",null);
+        db.close();
+        return success;
     }
 
     public DBManager(Context context) {

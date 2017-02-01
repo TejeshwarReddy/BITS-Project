@@ -1,4 +1,4 @@
-package project.bits.com.recandup.api;
+package project.bits.com.recandup;
 
 import okhttp3.MultipartBody;
 import okhttp3.ResponseBody;

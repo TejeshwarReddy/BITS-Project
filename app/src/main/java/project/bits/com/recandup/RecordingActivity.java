@@ -16,12 +16,10 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 
 import static android.media.MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED;
@@ -50,8 +48,7 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
         // using Environment.getExternalStorageState() before doing this.
         manager = new DBManager(this);
 
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), "MyCameraApp");
+        File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), "MyCameraApp");
         // This location works best if you want the created images to be shared
         // between applications and persist after your app has been uninstalled.
 
@@ -132,12 +129,12 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 
         // Step 3: Set a CamcorderProfile (requires API Level 8 or higher)
-        mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_LOW));
+        mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH));
 
         //setting capture rate
         mMediaRecorder.setCaptureRate(10);
 
-        mMediaRecorder.setMaxDuration(2000);
+        mMediaRecorder.setMaxDuration(60000);
 
         // Step 4: Set output file
         mMediaRecorder.setOutputFile(this.getOutputMediaFile(MEDIA_TYPE_VIDEO).toString());
@@ -149,7 +146,8 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
             @Override
             public void onInfo(MediaRecorder mediaRecorder, int i, int i1) {
                 if (i == MEDIA_RECORDER_INFO_MAX_DURATION_REACHED){
-                    Toast.makeText(RecordingActivity.this,"Video Time Done",Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(RecordingActivity.this,"Video Time Done",Toast.LENGTH_SHORT).show();
+                    Log.e("Video Time Done","Video Time Done");
                     releaseMediaRecorder();
                     if (prepareVideoRecorder()) {
                         // Camera is available and unlocked, MediaRecorder is prepared,
@@ -157,7 +155,8 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
                         mMediaRecorder.start();
                         // inform the user that recording has started
                         start.setText("STOP");
-                        Toast.makeText(RecordingActivity.this,"Video Started",Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(RecordingActivity.this,"Video Started",Toast.LENGTH_SHORT).show();
+                        Log.e("Video Started","Video Started");
                         isRecording = true;
                     } else {
                         // prepare didn't work, release the camera
@@ -209,14 +208,6 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
     @Override
     public void onClick(View view) {
         manager = new DBManager(this);
-        ArrayList<String> notUpload = manager.getNotUploadedVideos();
-        if (notUpload.size()!=0) {
-            Log.e(TAG, notUpload.get(0));
-        }
-        notUpload = manager.getToBeDeleted();
-        if (notUpload.size()!=0){
-            Log.e(TAG,notUpload.get(0));
-        }
         if (view.getId() == R.id.start_video){
             if (isRecording) {
                 // stop recording and release camera

@@ -17,22 +17,24 @@ public class FileDeletionService extends IntentService {
     }
 
     DBManager manager;
+    long success;
     @Override
     protected void onHandleIntent(Intent intent) {
         manager = new DBManager(this);
-        ArrayList<String> toBeDeleted = new ArrayList<>();
-        toBeDeleted = manager.getToBeDeleted();
-        if (!toBeDeleted.isEmpty()) {
+        ArrayList<String> toBeDeleted = manager.getToBeDeleted();
+        if ((toBeDeleted.size()!=0)) {
             for (int i = 0; i < toBeDeleted.size(); i++) {
                 File fdelete = new File(toBeDeleted.get(i));
                 if (fdelete.exists()) {
                     if (fdelete.delete()) {
                         System.out.println("file Deleted :" + toBeDeleted.get(i));
+                        manager.feedDeletedSuccess(toBeDeleted.get(i));
                     } else {
                         System.out.println("file not Deleted :" + toBeDeleted.get(i));
                     }
                 }
             }
         }
+        success = manager.deleteRecords();
     }
 }

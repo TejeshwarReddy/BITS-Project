@@ -69,7 +69,7 @@ public class DBManager extends SQLiteOpenHelper {
     public ArrayList<String> getNotUploadedVideos(){
         ArrayList<String> notUploaded = new ArrayList<>();
         db = this.getWritableDatabase();
-        long time = System.currentTimeMillis()-90000;
+        long time = System.currentTimeMillis()-10000;
         Cursor cursor = db.rawQuery("SELECT " + KEY_TITLE + " FROM " + TABLE + " WHERE " + KEY_UPLOADED +" = 0 AND "+KEY_TIME+" <= '"+ time +"' ORDER BY "+ KEY_TIME , null);
         if (cursor.moveToFirst()){
             do {
@@ -93,6 +93,21 @@ public class DBManager extends SQLiteOpenHelper {
         cursor.close();
         db.close();
         return toDelete;
+    }
+
+    public ArrayList<String> deleteMemory(){
+        ArrayList<String> deleteMemory = new ArrayList<>();
+        db = this.getWritableDatabase();
+        long time = System.currentTimeMillis()-24*60*60*1000;
+        Cursor cursor = db.rawQuery("SELECT " + KEY_TITLE + " FROM " + TABLE + " WHERE " + KEY_TIME + " <= "+time,null);
+        if (cursor.moveToFirst()){
+            do {
+                deleteMemory.add(cursor.getString(0));
+            }while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return deleteMemory;
     }
 
     public long deleteRecords(){

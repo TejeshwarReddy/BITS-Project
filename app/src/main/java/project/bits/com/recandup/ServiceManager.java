@@ -38,12 +38,12 @@ public class ServiceManager extends Service {
         Intent uploadIntent = new Intent(this, FileUploadService.class);
         PendingIntent pintent = PendingIntent.getService(this,0,uploadIntent,0);
         AlarmManager alarm = (AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
-        alarm.setRepeating(AlarmManager.RTC_WAKEUP, SystemClock.elapsedRealtime(), 90000, pintent);
+        alarm.setRepeating(AlarmManager.RTC_WAKEUP, SystemClock.elapsedRealtime(), 10000, pintent);
 
         Intent deleteIntent = new Intent(this, FileDeletionService.class);
         PendingIntent pendingIntent = PendingIntent.getService(this,0,deleteIntent,0);
         AlarmManager alarm1 = (AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
-        alarm1.setRepeating(AlarmManager.RTC_WAKEUP, SystemClock.elapsedRealtime(), 90000, pendingIntent);
+        alarm1.setRepeating(AlarmManager.RTC_WAKEUP, SystemClock.elapsedRealtime(), 10000, pendingIntent);
         return START_STICKY;
     }
 }

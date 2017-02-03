@@ -49,7 +49,7 @@ public class FileUploadService extends IntentService {
         Log.e("upload function","hello from upload file");
         manager = new DBManager(this);
         // create upload service client
-        ApiInterface service = ApiClient.getClient().create(ApiInterface.class);
+        ApiInterface service = ApiClient.getClient(Prefs.getUrlPref(this)).create(ApiInterface.class);
         File file = new File(fileUri.getPath());
         // create RequestBody instance from file
 

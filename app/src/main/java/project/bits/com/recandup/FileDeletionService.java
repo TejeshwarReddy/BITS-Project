@@ -2,6 +2,9 @@ package project.bits.com.recandup;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.os.Environment;
+import android.os.StatFs;
+import android.util.Log;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -36,5 +39,26 @@ public class FileDeletionService extends IntentService {
             }
         }
         success = manager.deleteRecords();
+
+        StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
+        long bytesAvailable = (long)stat.getBlockSize() * (long)stat.getAvailableBlocks();
+        long megAvailable = bytesAvailable / (1024 * 1024);
+        Log.e("","Available MB : "+megAvailable);
+        if (megAvailable<30){
+            ArrayList<String> deleteMemory = manager.deleteMemory();
+            if ((deleteMemory.size()!=0)) {
+                for (int i = 0; i < deleteMemory.size(); i++) {
+                    File fdelete = new File(deleteMemory.get(i));
+                    if (fdelete.exists()) {
+                        if (fdelete.delete()) {
+                            System.out.println("file Deleted :" + deleteMemory.get(i));
+                            manager.feedDeletedSuccess(deleteMemory.get(i));
+                        } else {
+                            System.out.println("file not Deleted :" + deleteMemory.get(i));
+                        }
+                    }
+                }
+            }
+        }
     }
 }

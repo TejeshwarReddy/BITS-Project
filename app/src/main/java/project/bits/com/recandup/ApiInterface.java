@@ -12,7 +12,7 @@ import retrofit2.http.Part;
  */
 public interface ApiInterface {
     @Multipart
-    @POST("upload")
+    @POST("upload.php")
     Call<ResponseBody> upload(
             @Part MultipartBody.Part file
     );

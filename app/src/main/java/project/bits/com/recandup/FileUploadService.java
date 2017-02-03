@@ -46,33 +46,37 @@ public class FileUploadService extends IntentService {
     boolean success;
 
     private boolean uploadFile(final Uri fileUri) {
-        Log.e("upload function","hello from upload file");
         manager = new DBManager(this);
         // create upload service client
-        ApiInterface service = ApiClient.getClient(Prefs.getUrlPref(this)).create(ApiInterface.class);
-        File file = new File(fileUri.getPath());
-        // create RequestBody instance from file
+        ApiInterface service;
+        if (!UrlPrefs.getUrlPref(this).isEmpty()) {
+            service = ApiClient.getClient(UrlPrefs.getUrlPref(this)).create(ApiInterface.class);
+
+            File file = new File(fileUri.getPath());
+            // create RequestBody instance from file
 
 
-        RequestBody videoBody = RequestBody.create(MediaType.parse("video/*"), file);
-        MultipartBody.Part fileToUpload = MultipartBody.Part.createFormData("video", file.getName(), videoBody);
+            RequestBody videoBody = RequestBody.create(MediaType.parse("video/*"), file);
+            MultipartBody.Part fileToUpload = MultipartBody.Part.createFormData("video", file.getName(), videoBody);
 
-        // finally, execute the request
-        Call<ResponseBody> call = service.upload(fileToUpload);
-        call.enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                Log.e("Upload", "success");
-                manager.feedUploadSuccess(fileUri.getPath());
-                success = true;
-            }
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e("Upload error:", t.getMessage());
-                Toast.makeText(FileUploadService.this,"Upload Failed check internet connection",Toast.LENGTH_SHORT).show();
-                success = false;
-            }
-        });
+            // finally, execute the request
+            Call<ResponseBody> call = service.upload(fileToUpload);
+            call.enqueue(new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                    Log.e("Upload", "success");
+                    manager.feedUploadSuccess(fileUri.getPath());
+                    success = true;
+                }
+
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+                    Log.e("Upload error:", t.getMessage());
+                    Toast.makeText(FileUploadService.this, "Upload Failed check internet connection", Toast.LENGTH_SHORT).show();
+                    success = false;
+                }
+            });
+        }
         return success;
     }
 }

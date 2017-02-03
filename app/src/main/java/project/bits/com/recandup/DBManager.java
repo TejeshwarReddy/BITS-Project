@@ -69,7 +69,7 @@ public class DBManager extends SQLiteOpenHelper {
     public ArrayList<String> getNotUploadedVideos(){
         ArrayList<String> notUploaded = new ArrayList<>();
         db = this.getWritableDatabase();
-        long time = System.currentTimeMillis()-10000;
+        long time = System.currentTimeMillis()-90000;
         Cursor cursor = db.rawQuery("SELECT " + KEY_TITLE + " FROM " + TABLE + " WHERE " + KEY_UPLOADED +" = 0 AND "+KEY_TIME+" <= '"+ time +"' ORDER BY "+ KEY_TIME , null);
         if (cursor.moveToFirst()){
             do {

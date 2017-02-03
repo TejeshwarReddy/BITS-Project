@@ -47,10 +47,10 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
         setContentView(R.layout.activity_main);
 
         url = (EditText) findViewById(R.id.url_link);
-        if (Prefs.getUrlPref(this).isEmpty()){
+        if (UrlPrefs.getUrlPref(this).isEmpty()) {
             Toast.makeText(this, "Enter a url in the box ", Toast.LENGTH_LONG).show();
-        }else{
-            url.setText(Prefs.getUrlPref(this));
+        } else {
+            url.setText(UrlPrefs.getUrlPref(this));
         }
 
         startService(new Intent(this,ServiceManager.class));
@@ -110,7 +110,7 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
         //setting capture rate
         mMediaRecorder.setCaptureRate(10);
 
-        mMediaRecorder.setMaxDuration(5000);
+        mMediaRecorder.setMaxDuration(30000);
 
         // Step 4: Set output file
         mMediaRecorder.setOutputFile(this.getOutputMediaFile(MEDIA_TYPE_VIDEO).toString());
@@ -223,10 +223,11 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
         manager = new DBManager(this);
         switch (view.getId()){
             case R.id.done:
-                Prefs.setUrl_link(this,url.getText().toString());
+                UrlPrefs.setUrl_link(this,url.getText().toString());
                 break;
             case R.id.start_video:
-                if (!Prefs.getUrlPref(this).isEmpty()) {
+                Log.e(TAG, UrlPrefs.getUrlPref(this));
+                if (!url.getText().toString().isEmpty()) {
                     if (view.getId() == R.id.start_video) {
                         if (isRecording) {
                             // stop recording and release camera

@@ -12,32 +12,45 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static android.media.MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED;
 
-public class RecordingActivity extends AppCompatActivity implements View.OnClickListener{
+/**
+ * All the ui activities are performed in this class.
+ */
+
+public class RecordingActivity extends AppCompatActivity implements View.OnClickListener,AdapterView.OnItemSelectedListener{
 
     private EditText url;
     private Camera camera;
     private LinearLayout showCase;
-    private Button start,done;
+    private Button start;
     private CameraPreview cameraPreview;
     private boolean isRecording = false;
     private MediaRecorder mMediaRecorder;
-    public static final int MEDIA_TYPE_IMAGE = 1;
     public static final int MEDIA_TYPE_VIDEO = 2;
     private static final String TAG = "Recording Activity";
+    Spinner quality;
 
     DBManager manager;
 
@@ -46,12 +59,48 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        quality = (Spinner) findViewById(R.id.quality);
+        quality.setOnItemSelectedListener(this);
+
+        // Spinner Drop down elements
+        List categories = new ArrayList();
+        categories.add("Select Quality");
+        categories.add("LOW");
+        categories.add("MEDIUM");
+        categories.add("HIGH");
+        ArrayAdapter dataAdapter = new ArrayAdapter(this, android.R.layout.simple_spinner_item, categories);
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        quality.setAdapter(dataAdapter);
+
+        if (VideoPrefs.getQualityPref(this)!=-1) {
+            quality.setSelection(VideoPrefs.getQualityPref(this));
+        }else {
+            quality.setSelection(0);
+        }
+
         url = (EditText) findViewById(R.id.url_link);
         if (UrlPrefs.getUrlPref(this).isEmpty()) {
-            Toast.makeText(this, "Enter a url in the box ", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Enter server url ", Toast.LENGTH_LONG).show();
         } else {
             url.setText(UrlPrefs.getUrlPref(this));
         }
+
+        url.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+                if (i == EditorInfo.IME_ACTION_SEARCH ||
+                        i == EditorInfo.IME_ACTION_DONE ||
+                        keyEvent.getAction() == KeyEvent.ACTION_DOWN &&
+                                keyEvent.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                    UrlPrefs.setUrl_link(RecordingActivity.this,url.getText().toString());
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(textView.getWindowToken(), 0);
+                    return true; // consume.
+
+                }
+                return false; // pass on to other listeners.
+            }
+        });
 
         startService(new Intent(this,ServiceManager.class));
 
@@ -65,14 +114,11 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
         cameraPreview = new CameraPreview(this,camera);
 
         start = (Button) findViewById(R.id.start_video);
-        done = (Button) findViewById(R.id.done);
-
         showCase = (LinearLayout) findViewById(R.id.video_showcase_layout);
         showCase.addView(cameraPreview);
 
         // Add a listener to the Capture button
         start.setOnClickListener(this);
-        done.setOnClickListener(this);
     }
 
     public static Camera getCameraInstance(){
@@ -105,7 +151,20 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 
         // Step 3: Set a CamcorderProfile (requires API Level 8 or higher)
-        mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_LOW));
+        switch (VideoPrefs.getQualityPref(this)){
+            case 1:
+                mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_LOW));
+                break;
+            case 2:
+                mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P));
+                break;
+            case 3:
+                mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH));
+                break;
+            default:
+                mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_LOW));
+                break;
+        }
 
         //setting capture rate
         mMediaRecorder.setCaptureRate(10);
@@ -222,10 +281,12 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
     public void onClick(View view) {
         manager = new DBManager(this);
         switch (view.getId()){
-            case R.id.done:
-                UrlPrefs.setUrl_link(this,url.getText().toString());
-                break;
             case R.id.start_video:
+                if (!isNetworkAvailable()){
+                    Toast.makeText(this,
+                            "Check your Internet connection \n The camera can record videos but can upload only when there is internet connection",
+                            Toast.LENGTH_LONG).show();
+                }
                 Log.e(TAG, UrlPrefs.getUrlPref(this));
                 if (!url.getText().toString().isEmpty()) {
                     if (view.getId() == R.id.start_video) {
@@ -257,5 +318,28 @@ public class RecordingActivity extends AppCompatActivity implements View.OnClick
                     Toast.makeText(this,"Enter a url :",Toast.LENGTH_LONG).show();
                 }
         }
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+        switch (i){
+            case 1:
+                VideoPrefs.setQuality(this,1);
+                break;
+            case 2:
+                VideoPrefs.setQuality(this,2);
+                break;
+            case 3:
+                VideoPrefs.setQuality(this,3);
+                break;
+            default:
+                VideoPrefs.setQuality(this,1);
+                break;
+        }
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> adapterView) {
+
     }
 }

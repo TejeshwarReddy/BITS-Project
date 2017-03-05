@@ -21,6 +21,10 @@ import retrofit2.Response;
  * Created by tejeshwar on 28/1/17.
  */
 
+/**
+ * This class uploads the recorded videos to the server.
+ */
+
 public class FileUploadService extends IntentService {
 
     DBManager manager;
@@ -36,6 +40,7 @@ public class FileUploadService extends IntentService {
         ArrayList<String> notUploaded = manager.getNotUploadedVideos();
         if (!(notUploaded.size()==0)) {
             for (int i = 0; i < notUploaded.size(); i++) {
+
 //                Log.e("FILE UPLOAD SERVICE", notUploaded.get(i));
                 boolean success = uploadFile(Uri.parse(notUploaded.get(i)));
                 Log.e("FILE UPLOAD SERVICE", success + "");
@@ -71,7 +76,7 @@ public class FileUploadService extends IntentService {
 
                 @Override
                 public void onFailure(Call<ResponseBody> call, Throwable t) {
-                    Log.e("Upload error:", t.getMessage());
+//                    Log.e("Upload error:", t.getMessage());
                     Toast.makeText(FileUploadService.this, "Upload Failed check internet connection", Toast.LENGTH_SHORT).show();
                     success = false;
                 }

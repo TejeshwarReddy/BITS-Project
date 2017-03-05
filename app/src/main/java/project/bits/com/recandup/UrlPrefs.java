@@ -7,6 +7,11 @@ import android.content.SharedPreferences;
  * Created by tejeshwar on 2/2/17.
  */
 
+
+/**
+ * Shared Preferences class for storing url of the server.
+ */
+
 public class UrlPrefs {
 
     private static final String PACKAGE_NAME = "URL_PREFS";

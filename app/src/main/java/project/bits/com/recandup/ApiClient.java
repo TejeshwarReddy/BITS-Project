@@ -7,6 +7,10 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * Created by tejeshwar on 19/12/16.
  */
 
+/**
+ * This class is for generating retrofit client for http requests
+ */
+
 public class ApiClient {
 
     private static Retrofit retrofit = null;

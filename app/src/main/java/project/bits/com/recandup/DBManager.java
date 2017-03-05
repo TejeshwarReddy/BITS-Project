@@ -12,6 +12,12 @@ import java.util.ArrayList;
  * Created by tejeshwar on 27/1/17.
  */
 
+/**
+ * A class for DB Transactions:
+ *      stores the name of the video files which are to be
+ *      uploaded and deletes them after they are uploaded.
+ */
+
 public class DBManager extends SQLiteOpenHelper {
 
     //DB PARAMETERS
@@ -38,6 +44,7 @@ public class DBManager extends SQLiteOpenHelper {
     private SQLiteDatabase db;
     private long success = 0;
 
+    //adds video
     public long addVideoAddress(String title,long time){
         db=this.getWritableDatabase();
         ContentValues cv = new ContentValues();
@@ -69,7 +76,7 @@ public class DBManager extends SQLiteOpenHelper {
     public ArrayList<String> getNotUploadedVideos(){
         ArrayList<String> notUploaded = new ArrayList<>();
         db = this.getWritableDatabase();
-        long time = System.currentTimeMillis()-90000;
+        long time = System.currentTimeMillis()-40000;
         Cursor cursor = db.rawQuery("SELECT " + KEY_TITLE + " FROM " + TABLE + " WHERE " + KEY_UPLOADED +" = 0 AND "+KEY_TIME+" <= '"+ time +"' ORDER BY "+ KEY_TIME , null);
         if (cursor.moveToFirst()){
             do {

@@ -13,6 +13,14 @@ import java.util.ArrayList;
  * Created by tejeshwar on 28/1/17.
  */
 
+/**
+ * This service is used for deleting files which are already uploaded
+ * It also deletes the data related to the file stored in the database.
+ *
+ * It also takes care of the memory overflow i.e if the memory of the phone is full, it deletes the
+ * files which are of 24 hrs old.
+ */
+
 public class FileDeletionService extends IntentService {
 
     public FileDeletionService() {
